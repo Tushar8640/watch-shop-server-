@@ -26,12 +26,24 @@ async function run() {
     const database = client.db("Assignment12");
     const productsCollection = database.collection("products");
     const ordersCollection = database.collection("orders");
+    const usersCollection = database.collection("users");
 
     // get all products api
 
     app.get("/allproducts", async (req, res) => {
       const data = productsCollection.find({});
       const result = await data.toArray();
+      res.send(result);
+    });
+
+    // delete a product api
+
+    app.delete("/deleteproducts/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: ObjectId(id) };
+      const result = await productsCollection.deleteOne(query);
+      console.log(result);
       res.send(result);
     });
 
@@ -93,6 +105,54 @@ async function run() {
 
       console.log(result);
     });
+    // took users from client site
+    app.post("/users", async (req, res) => {
+      const users = req.body;
+      const result = await usersCollection.insertOne(users);
+      console.log(result);
+    });
+    // took users from client site
+    app.put("/users", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const filter = { email: user.email };
+      const options = { upsert: true };
+      const updateDoc = { $set: user };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.json(result);
+    });
+
+    // make admin api
+
+    app.put("/users/admin", async (req, res) => {
+      const user = req.body;
+      const filter = { email: user.email};
+     
+      const updateInfo = { $set: { role: "admin" } };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateInfo,
+       
+      );
+      console.log(result);
+    });
+
+    // check admin api 
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      let isAdmin = false;
+      if (user?.role === 'admin') {
+          isAdmin = true;
+      }
+      res.json({ admin: isAdmin });
+  })
 
     console.log("database connected successfully");
   } finally {
@@ -103,7 +163,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Hello Assignment 11!");
+  res.send("Hello Assignment 12!");
 });
 
 app.listen(port, () => {
