@@ -27,6 +27,7 @@ async function run() {
     const productsCollection = database.collection("products");
     const ordersCollection = database.collection("orders");
     const usersCollection = database.collection("users");
+    const reviewsCollection = database.collection("reviews");
 
     // get all products api
 
@@ -95,6 +96,16 @@ async function run() {
       const result = await ordersCollection.find({}).toArray();
       res.send(result);
     });
+    // approve  orders
+    app.put("/approveorder/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const updateDoc = req.body;
+      const updateStatus = { $set: updateDoc };
+      const result = await ordersCollection.updateOne(query, updateStatus);
+      res.json(result);
+      console.log(result);
+    });
 
     // order cancle api
     app.delete("/cancleorder/:id", async (req, res) => {
@@ -130,29 +141,41 @@ async function run() {
 
     app.put("/users/admin", async (req, res) => {
       const user = req.body;
-      const filter = { email: user.email};
-     
+      const filter = { email: user.email };
+
       const updateInfo = { $set: { role: "admin" } };
-      const result = await usersCollection.updateOne(
-        filter,
-        updateInfo,
-       
-      );
+      const result = await usersCollection.updateOne(filter, updateInfo);
       console.log(result);
     });
 
-    // check admin api 
-    app.get('/users/:email', async (req, res) => {
+    // check admin api
+    app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       console.log(email);
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       let isAdmin = false;
-      if (user?.role === 'admin') {
-          isAdmin = true;
+      if (user?.role === "admin") {
+        isAdmin = true;
       }
       res.json({ admin: isAdmin });
-  })
+    });
+
+    // USERS REVIEW POST API
+    app.post("/postreview", async (req, res) => {
+      const data = req.body;
+      const result = await reviewsCollection.insertOne(data);
+      res.send(result);
+      console.log(result);
+    });
+
+    // get all  USERS REVIEW  API
+    app.get("/allreview", async (req, res) => {
+      const data = reviewsCollection.find({});
+      const result = await data.toArray();
+      res.send(result);
+      console.log(result);
+    });
 
     console.log("database connected successfully");
   } finally {
